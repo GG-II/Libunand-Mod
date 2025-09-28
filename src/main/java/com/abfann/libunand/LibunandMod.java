@@ -1,7 +1,12 @@
 package com.abfann.libunand;
 
+import com.abfann.libunand.commands.EconomyCommands;
 import com.abfann.libunand.config.ConfigManager;
+import com.abfann.libunand.data.PlayerDataHandler;
+import com.abfann.libunand.items.ModItems;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -16,6 +21,9 @@ public class LibunandMod {
     public static final Logger LOGGER = LogManager.getLogger();
 
     public LibunandMod() {
+        // Registrar items
+        ModItems.ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+
         // Registrar configuración
         ConfigManager.register();
 
@@ -29,11 +37,24 @@ public class LibunandMod {
 
     private void setup(final FMLCommonSetupEvent event) {
         LOGGER.info("Libunand está inicializando...");
+
+        // Registrar capabilities de economía
+        PlayerDataHandler.registerCapabilities();
+
         LOGGER.info("Balance inicial configurado: " + ConfigManager.STARTING_BALANCE.get());
+        LOGGER.info("JoJoCoin registrado exitosamente!");
+        LOGGER.info("Sistema de datos del jugador configurado!");
+        LOGGER.info("Comandos de economía registrados!");
         LOGGER.info("Sistema económico JoJoCoins cargado!");
     }
 
     private void doClientStuff(final FMLClientSetupEvent event) {
         LOGGER.info("Cliente de Libunand configurado!");
+    }
+
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
+        EconomyCommands.register(event.getDispatcher());
+        LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
 }
