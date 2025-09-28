@@ -9,6 +9,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.storage.FolderName;
 
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -204,4 +205,9 @@ public class PlotManager {
     public List<Plot> getAllPlots() {
         return new ArrayList<>(plots);
     }
+
+    /**
+     * Spawn del agente de bienes raíces en un lote
+     */
+
 }

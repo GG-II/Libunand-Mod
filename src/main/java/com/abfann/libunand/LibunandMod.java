@@ -4,6 +4,7 @@ import com.abfann.libunand.commands.EconomyCommands;
 import com.abfann.libunand.commands.PlotCommands;
 import com.abfann.libunand.config.ConfigManager;
 import com.abfann.libunand.data.PlayerDataHandler;
+import com.abfann.libunand.entities.ModEntities;
 import com.abfann.libunand.items.ModItems;
 import com.abfann.libunand.protection.PlotManager;
 import net.minecraftforge.common.MinecraftForge;
@@ -25,7 +26,7 @@ public class LibunandMod {
 
     public LibunandMod() {
         // Registrar items
-        ModItems.ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+        ModEntities.ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
 
         // Registrar configuración
         ConfigManager.register();
@@ -47,7 +48,7 @@ public class LibunandMod {
         LOGGER.info("Balance inicial configurado: " + ConfigManager.STARTING_BALANCE.get());
         LOGGER.info("JoJoCoin registrado exitosamente!");
         LOGGER.info("Sistema de datos del jugador configurado!");
-        LOGGER.info("Sistema de lotes configurado!");
+        LOGGER.info("Entidades personalizadas registradas!");
         LOGGER.info("Comandos de economía registrados!");
         LOGGER.info("Sistema económico JoJoCoins cargado!");
     }

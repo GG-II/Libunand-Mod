@@ -22,6 +22,7 @@ import net.minecraft.util.text.TextFormatting;
 import com.abfann.libunand.protection.PermissionManager;
 import com.abfann.libunand.protection.PlotRole;
 import com.abfann.libunand.protection.PlotPermission;
+import com.abfann.libunand.entities.RealEstateVillagerEntity;
 import java.util.UUID;
 
 import java.util.List;
@@ -70,6 +71,10 @@ public class PlotCommands {
                                 .executes(PlotCommands::showMembersHere)
                                 .then(Commands.argument("plotname", StringArgumentType.word())
                                         .executes(PlotCommands::showMembers)))
+                        .then(Commands.literal("agent")
+                                .requires(source -> source.hasPermission(2)) // Solo OPs
+                                .then(Commands.argument("plotname", StringArgumentType.word())
+                                        .executes(PlotCommands::spawnAgent)))
         );
     }
 
@@ -307,7 +312,6 @@ public class PlotCommands {
     }
 
     // /plot help
-    // BUSCA el método showHelp y REEMPLÁZALO completamente por esto:
     private static int showHelp(CommandContext<CommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrException();
 
@@ -346,7 +350,6 @@ public class PlotCommands {
     /**
      * Muestra información detallada de un lote
      */
-    // BUSCA el método showPlotInfo y REEMPLÁZALO completamente por esto:
     private static void showPlotInfo(ServerPlayerEntity player, Plot plot) {
         player.sendMessage(
                 new StringTextComponent("=== Informacion del Lote ===")
@@ -850,5 +853,48 @@ public class PlotCommands {
                     player.getUUID()
             );
         }
+    }
+
+    // /plot agent <nombre>
+    private static int spawnAgent(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String plotName = StringArgumentType.getString(context, "plotname");
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotByName(plotName);
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("Lote '" + plotName + "' no encontrado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+        if (!plot.isForSale()) {
+            player.sendMessage(
+                    new StringTextComponent("El lote '" + plotName + "' no esta en venta.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        // Crear agente donde está el jugador
+        BlockPos playerPos = player.blockPosition();
+        RealEstateVillagerEntity agent = new RealEstateVillagerEntity(player.level, plotName, playerPos);
+        agent.setPos(playerPos.getX() + 0.5, playerPos.getY(), playerPos.getZ() + 0.5);
+
+        player.level.addFreshEntity(agent);
+
+        player.sendMessage(
+                new StringTextComponent("Agente de bienes raices spawneado para el lote '")
+                        .withStyle(TextFormatting.GREEN)
+                        .append(new StringTextComponent(plotName).withStyle(TextFormatting.YELLOW))
+                        .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                player.getUUID()
+        );
+
+        return 1;
     }
 }
