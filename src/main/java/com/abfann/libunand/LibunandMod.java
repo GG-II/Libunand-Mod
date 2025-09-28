@@ -1,9 +1,11 @@
 package com.abfann.libunand;
 
 import com.abfann.libunand.commands.EconomyCommands;
+import com.abfann.libunand.commands.PlotCommands;
 import com.abfann.libunand.config.ConfigManager;
 import com.abfann.libunand.data.PlayerDataHandler;
 import com.abfann.libunand.items.ModItems;
+import com.abfann.libunand.protection.PlotManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -13,6 +15,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 
 @Mod("libunand")
 public class LibunandMod {
@@ -44,6 +47,7 @@ public class LibunandMod {
         LOGGER.info("Balance inicial configurado: " + ConfigManager.STARTING_BALANCE.get());
         LOGGER.info("JoJoCoin registrado exitosamente!");
         LOGGER.info("Sistema de datos del jugador configurado!");
+        LOGGER.info("Sistema de lotes configurado!");
         LOGGER.info("Comandos de economía registrados!");
         LOGGER.info("Sistema económico JoJoCoins cargado!");
     }
@@ -53,8 +57,15 @@ public class LibunandMod {
     }
 
     @SubscribeEvent
+    public void onServerStarted(FMLServerStartedEvent event) {
+        PlotManager.getInstance().initialize(event.getServer());
+        LOGGER.info("PlotManager inicializado con el servidor!");
+    }
+
+    @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         EconomyCommands.register(event.getDispatcher());
+        PlotCommands.register(event.getDispatcher());
         LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
 }
