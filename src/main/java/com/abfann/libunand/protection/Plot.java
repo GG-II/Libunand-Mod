@@ -4,6 +4,10 @@ import com.google.gson.annotations.Expose;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import com.abfann.libunand.protection.PermissionManager;
+import com.abfann.libunand.protection.PlotPermission;
+import com.abfann.libunand.protection.PlotRole;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -179,5 +183,49 @@ public class Plot {
     public String toString() {
         return String.format("Plot{name='%s', owner='%s', price=%d, forSale=%s, area=%d}",
                 name, ownerName, price, forSale, getArea());
+    }
+
+    // Agregar al final de la clase Plot, antes del último }
+
+    /**
+     * Remueve un co-dueño
+     */
+    public void removeCoOwner(UUID playerUUID) {
+        coOwners.remove(playerUUID);
+    }
+
+    /**
+     * Verifica si un jugador tiene permisos específicos usando el nuevo sistema
+     */
+    public boolean hasPermission(UUID playerUUID, PlotPermission permission) {
+        return PermissionManager.hasPermission(this, playerUUID, permission);
+    }
+
+    /**
+     * Obtiene el rol de un jugador
+     */
+    public PlotRole getPlayerRole(UUID playerUUID) {
+        return PermissionManager.getPlayerRole(this, playerUUID);
+    }
+
+    /**
+     * Obtiene todos los miembros del lote con sus roles
+     */
+    public String getMembersInfo() {
+        StringBuilder info = new StringBuilder();
+
+        if (owner != null) {
+            info.append("Propietario: ").append(ownerName).append("\n");
+        }
+
+        if (!coOwners.isEmpty()) {
+            info.append("Co-propietarios: ").append(coOwners.size()).append("\n");
+        }
+
+        if (!trustedPlayers.isEmpty()) {
+            info.append("Jugadores de confianza: ").append(trustedPlayers.size()).append("\n");
+        }
+
+        return info.toString();
     }
 }

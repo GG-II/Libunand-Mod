@@ -19,6 +19,10 @@ import net.minecraft.item.Items;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
+import com.abfann.libunand.protection.PermissionManager;
+import com.abfann.libunand.protection.PlotRole;
+import com.abfann.libunand.protection.PlotPermission;
+import java.util.UUID;
 
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +54,22 @@ public class PlotCommands {
                                 .executes(PlotCommands::showHelp))
                         .then(Commands.literal("tool")
                                 .executes(PlotCommands::giveTool))
+                        .then(Commands.literal("trust")
+                                .then(Commands.argument("player", StringArgumentType.word())
+                                        .executes(PlotCommands::trustPlayer)))
+                        .then(Commands.literal("untrust")
+                                .then(Commands.argument("player", StringArgumentType.word())
+                                        .executes(PlotCommands::untrustPlayer)))
+                        .then(Commands.literal("addowner")
+                                .then(Commands.argument("player", StringArgumentType.word())
+                                        .executes(PlotCommands::addCoOwner)))
+                        .then(Commands.literal("removeowner")
+                                .then(Commands.argument("player", StringArgumentType.word())
+                                        .executes(PlotCommands::removeCoOwner)))
+                        .then(Commands.literal("members")
+                                .executes(PlotCommands::showMembersHere)
+                                .then(Commands.argument("plotname", StringArgumentType.word())
+                                        .executes(PlotCommands::showMembers)))
         );
     }
 
@@ -287,21 +307,38 @@ public class PlotCommands {
     }
 
     // /plot help
+    // BUSCA el método showHelp y REEMPLÁZALO completamente por esto:
     private static int showHelp(CommandContext<CommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrException();
 
         player.sendMessage(new StringTextComponent("=== Comandos de Lotes ===").withStyle(TextFormatting.GOLD), player.getUUID());
-        player.sendMessage(new StringTextComponent("• /plot list - Ver lotes disponibles").withStyle(TextFormatting.YELLOW), player.getUUID());
-        player.sendMessage(new StringTextComponent("• /plot info [nombre] - Ver informacion de lote").withStyle(TextFormatting.YELLOW), player.getUUID());
-        player.sendMessage(new StringTextComponent("• /plot buy <nombre> - Comprar lote").withStyle(TextFormatting.YELLOW), player.getUUID());
-        player.sendMessage(new StringTextComponent("• /plot tool - Obtener herramienta de seleccion").withStyle(TextFormatting.YELLOW), player.getUUID());
-        player.sendMessage(new StringTextComponent("• /plot help - Mostrar esta ayuda").withStyle(TextFormatting.YELLOW), player.getUUID());
 
+        // Comandos básicos para todos
+        player.sendMessage(new StringTextComponent("--- Comandos Basicos ---").withStyle(TextFormatting.AQUA), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot list - Ver lotes disponibles para compra").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot info [nombre] - Ver informacion detallada de lote").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot buy <nombre> - Comprar lote con JoJoCoins").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot tool - Obtener herramienta de seleccion").withStyle(TextFormatting.YELLOW), player.getUUID());
+
+        // Comandos de gestión de permisos
+        player.sendMessage(new StringTextComponent("--- Gestion de Permisos ---").withStyle(TextFormatting.GREEN), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot trust <jugador> - Dar permisos de construccion").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot untrust <jugador> - Quitar permisos de construccion").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot addowner <jugador> - Agregar co-propietario").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot removeowner <jugador> - Remover co-propietario").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot members [nombre] - Ver miembros del lote").withStyle(TextFormatting.YELLOW), player.getUUID());
+
+        // Comandos de administrador
         if (player.hasPermissions(2)) {
-            player.sendMessage(new StringTextComponent("=== Comandos de Admin ===").withStyle(TextFormatting.RED), player.getUUID());
-            player.sendMessage(new StringTextComponent("• /plot create <nombre> <precio> - Crear lote").withStyle(TextFormatting.YELLOW), player.getUUID());
-            player.sendMessage(new StringTextComponent("• /plot delete <nombre> - Eliminar lote").withStyle(TextFormatting.YELLOW), player.getUUID());
+            player.sendMessage(new StringTextComponent("--- Comandos de Administrador ---").withStyle(TextFormatting.RED), player.getUUID());
+            player.sendMessage(new StringTextComponent("• /plot create <nombre> <precio> - Crear nuevo lote").withStyle(TextFormatting.YELLOW), player.getUUID());
+            player.sendMessage(new StringTextComponent("• /plot delete <nombre> - Eliminar lote existente").withStyle(TextFormatting.YELLOW), player.getUUID());
         }
+
+        player.sendMessage(new StringTextComponent("--- Informacion ---").withStyle(TextFormatting.LIGHT_PURPLE), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Usa el hacha dorada para seleccionar areas").withStyle(TextFormatting.GRAY), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Click izquierdo = Posicion 1, Click derecho = Posicion 2").withStyle(TextFormatting.GRAY), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Los lotes te protegen contra griefing").withStyle(TextFormatting.GRAY), player.getUUID());
 
         return 1;
     }
@@ -309,6 +346,7 @@ public class PlotCommands {
     /**
      * Muestra información detallada de un lote
      */
+    // BUSCA el método showPlotInfo y REEMPLÁZALO completamente por esto:
     private static void showPlotInfo(ServerPlayerEntity player, Plot plot) {
         player.sendMessage(
                 new StringTextComponent("=== Informacion del Lote ===")
@@ -349,6 +387,22 @@ public class PlotCommands {
                             .append(new StringTextComponent("Ocupado").withStyle(TextFormatting.RED)),
                     player.getUUID()
             );
+
+            // Mostrar información de miembros
+            int totalMembers = plot.getCoOwners().size() + plot.getTrustedPlayers().size();
+            if (totalMembers > 0) {
+                player.sendMessage(
+                        new StringTextComponent("Miembros: ")
+                                .withStyle(TextFormatting.AQUA)
+                                .append(new StringTextComponent(totalMembers + " jugador(es)").withStyle(TextFormatting.WHITE))
+                                .append(new StringTextComponent(" (")
+                                        .append(new StringTextComponent(plot.getCoOwners().size() + " co-propietarios").withStyle(TextFormatting.GREEN))
+                                        .append(new StringTextComponent(", ").withStyle(TextFormatting.GRAY))
+                                        .append(new StringTextComponent(plot.getTrustedPlayers().size() + " confianza").withStyle(TextFormatting.YELLOW))
+                                        .append(new StringTextComponent(")").withStyle(TextFormatting.GRAY))),
+                        player.getUUID()
+                );
+            }
         }
 
         player.sendMessage(
@@ -365,5 +419,436 @@ public class PlotCommands {
                         .append(new StringTextComponent("(" + center.getX() + ", " + center.getY() + ", " + center.getZ() + ")").withStyle(TextFormatting.WHITE)),
                 player.getUUID()
         );
+
+        // Mostrar permisos del jugador si está en el lote
+        if (!plot.isForSale()) {
+            PlotRole playerRole = PermissionManager.getPlayerRole(plot, player.getUUID());
+            player.sendMessage(
+                    new StringTextComponent("Tu rol: ")
+                            .withStyle(TextFormatting.AQUA)
+                            .append(new StringTextComponent(playerRole.getDisplayName()).withStyle(
+                                    playerRole == PlotRole.OWNER ? TextFormatting.GOLD :
+                                            playerRole == PlotRole.CO_OWNER ? TextFormatting.GREEN :
+                                                    playerRole == PlotRole.TRUSTED ? TextFormatting.YELLOW :
+                                                            TextFormatting.GRAY
+                            )),
+                    player.getUUID()
+            );
+
+            // Mostrar permisos específicos
+            if (playerRole != PlotRole.VISITOR) {
+                StringBuilder permissions = new StringBuilder();
+                for (PlotPermission permission : playerRole.getPermissions()) {
+                    if (permissions.length() > 0) permissions.append(", ");
+                    permissions.append(permission.getDescription());
+                }
+
+                player.sendMessage(
+                        new StringTextComponent("Permisos: ")
+                                .withStyle(TextFormatting.AQUA)
+                                .append(new StringTextComponent(permissions.toString()).withStyle(TextFormatting.WHITE)),
+                        player.getUUID()
+                );
+            }
+        }
+    }
+    // /plot trust <jugador>
+    private static int trustPlayer(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String targetPlayerName = StringArgumentType.getString(context, "player");
+
+        // Buscar el lote donde está el jugador
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        // Verificar que el jugador puede administrar este lote
+        if (!PermissionManager.canAdministrate(plot, player.getUUID())) {
+            player.sendMessage(
+                    new StringTextComponent("No tienes permisos para administrar este lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        // Buscar el UUID del jugador objetivo (simplificado para este ejemplo)
+        ServerPlayerEntity targetPlayer = player.getServer().getPlayerList().getPlayerByName(targetPlayerName);
+        if (targetPlayer == null) {
+            player.sendMessage(
+                    new StringTextComponent("Jugador '" + targetPlayerName + "' no encontrado o no esta conectado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        UUID targetUUID = targetPlayer.getUUID();
+
+        if (PermissionManager.addTrustedPlayer(plot, player.getUUID(), targetUUID)) {
+            PlotManager.getInstance().savePlots();
+
+            player.sendMessage(
+                    new StringTextComponent("Jugador ")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(targetPlayerName).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent(" agregado como confianza al lote '").withStyle(TextFormatting.GREEN))
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                    player.getUUID()
+            );
+
+            // Notificar al jugador objetivo si está conectado
+            targetPlayer.sendMessage(
+                    new StringTextComponent("Has sido agregado como confianza al lote '")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("' por ").withStyle(TextFormatting.GREEN))
+                            .append(new StringTextComponent(player.getName().getString()).withStyle(TextFormatting.WHITE)),
+                    targetPlayer.getUUID()
+            );
+
+            return 1;
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("No se pudo agregar el jugador como confianza. Verifica que no sea ya propietario o co-propietario.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+    }
+
+    // /plot untrust <jugador>
+    private static int untrustPlayer(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String targetPlayerName = StringArgumentType.getString(context, "player");
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        if (!PermissionManager.canAdministrate(plot, player.getUUID())) {
+            player.sendMessage(
+                    new StringTextComponent("No tienes permisos para administrar este lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        ServerPlayerEntity targetPlayer = player.getServer().getPlayerList().getPlayerByName(targetPlayerName);
+        if (targetPlayer == null) {
+            player.sendMessage(
+                    new StringTextComponent("Jugador '" + targetPlayerName + "' no encontrado o no esta conectado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        UUID targetUUID = targetPlayer.getUUID();
+
+        if (PermissionManager.removeTrustedPlayer(plot, player.getUUID(), targetUUID)) {
+            PlotManager.getInstance().savePlots();
+
+            player.sendMessage(
+                    new StringTextComponent("Jugador ")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(targetPlayerName).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent(" removido de confianza del lote '").withStyle(TextFormatting.GREEN))
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                    player.getUUID()
+            );
+
+            // Notificar al jugador objetivo
+            targetPlayer.sendMessage(
+                    new StringTextComponent("Has sido removido de confianza del lote '")
+                            .withStyle(TextFormatting.RED)
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.RED)),
+                    targetPlayer.getUUID()
+            );
+
+            return 1;
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("No se pudo remover el jugador de confianza.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+    }
+
+    // /plot addowner <jugador>
+    private static int addCoOwner(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String targetPlayerName = StringArgumentType.getString(context, "player");
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        // Solo el dueño original puede añadir co-dueños
+        if (plot.getOwner() == null || !plot.getOwner().equals(player.getUUID())) {
+            player.sendMessage(
+                    new StringTextComponent("Solo el propietario original puede agregar co-propietarios.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        ServerPlayerEntity targetPlayer = player.getServer().getPlayerList().getPlayerByName(targetPlayerName);
+        if (targetPlayer == null) {
+            player.sendMessage(
+                    new StringTextComponent("Jugador '" + targetPlayerName + "' no encontrado o no esta conectado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        UUID targetUUID = targetPlayer.getUUID();
+
+        if (PermissionManager.addCoOwner(plot, player.getUUID(), targetUUID)) {
+            PlotManager.getInstance().savePlots();
+
+            player.sendMessage(
+                    new StringTextComponent("Jugador ")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(targetPlayerName).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent(" agregado como co-propietario del lote '").withStyle(TextFormatting.GREEN))
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                    player.getUUID()
+            );
+
+            targetPlayer.sendMessage(
+                    new StringTextComponent("Ahora eres co-propietario del lote '")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'!").withStyle(TextFormatting.GREEN)),
+                    targetPlayer.getUUID()
+            );
+
+            return 1;
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("No se pudo agregar el co-propietario.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+    }
+
+    // /plot removeowner <jugador>
+    private static int removeCoOwner(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String targetPlayerName = StringArgumentType.getString(context, "player");
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        if (plot.getOwner() == null || !plot.getOwner().equals(player.getUUID())) {
+            player.sendMessage(
+                    new StringTextComponent("Solo el propietario original puede remover co-propietarios.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        ServerPlayerEntity targetPlayer = player.getServer().getPlayerList().getPlayerByName(targetPlayerName);
+        if (targetPlayer == null) {
+            player.sendMessage(
+                    new StringTextComponent("Jugador '" + targetPlayerName + "' no encontrado o no esta conectado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        UUID targetUUID = targetPlayer.getUUID();
+
+        if (PermissionManager.removeCoOwner(plot, player.getUUID(), targetUUID)) {
+            PlotManager.getInstance().savePlots();
+
+            player.sendMessage(
+                    new StringTextComponent("Jugador ")
+                            .withStyle(TextFormatting.GREEN)
+                            .append(new StringTextComponent(targetPlayerName).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent(" removido como co-propietario del lote '").withStyle(TextFormatting.GREEN))
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                    player.getUUID()
+            );
+
+            targetPlayer.sendMessage(
+                    new StringTextComponent("Ya no eres co-propietario del lote '")
+                            .withStyle(TextFormatting.RED)
+                            .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                            .append(new StringTextComponent("'.").withStyle(TextFormatting.RED)),
+                    targetPlayer.getUUID()
+            );
+
+            return 1;
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("No se pudo remover el co-propietario.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+    }
+
+    // /plot members
+    private static int showMembersHere(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        showPlotMembers(player, plotOpt.get());
+        return 1;
+    }
+
+    // /plot members <nombre>
+    private static int showMembers(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        String plotName = StringArgumentType.getString(context, "plotname");
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotByName(plotName);
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("Lote '" + plotName + "' no encontrado.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        // Solo permitir ver miembros si tiene permisos o es admin
+        if (!PermissionManager.canAdministrate(plot, player.getUUID()) && !player.hasPermissions(2)) {
+            player.sendMessage(
+                    new StringTextComponent("No tienes permisos para ver los miembros de este lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        showPlotMembers(player, plot);
+        return 1;
+    }
+
+    /**
+     * Muestra los miembros de un lote
+     */
+    private static void showPlotMembers(ServerPlayerEntity player, Plot plot) {
+        player.sendMessage(
+                new StringTextComponent("=== Miembros del Lote '")
+                        .withStyle(TextFormatting.GOLD)
+                        .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                        .append(new StringTextComponent("' ===").withStyle(TextFormatting.GOLD)),
+                player.getUUID()
+        );
+
+        // Propietario
+        if (plot.getOwner() != null) {
+            player.sendMessage(
+                    new StringTextComponent("Propietario: ")
+                            .withStyle(TextFormatting.AQUA)
+                            .append(new StringTextComponent(plot.getOwnerName()).withStyle(TextFormatting.WHITE)),
+                    player.getUUID()
+            );
+        }
+
+        // Co-propietarios
+        if (!plot.getCoOwners().isEmpty()) {
+            player.sendMessage(
+                    new StringTextComponent("Co-propietarios (" + plot.getCoOwners().size() + "):")
+                            .withStyle(TextFormatting.GREEN),
+                    player.getUUID()
+            );
+            // Nota: Para mostrar nombres necesitaríamos un sistema de cache de nombres
+            for (UUID coOwner : plot.getCoOwners()) {
+                player.sendMessage(
+                        new StringTextComponent("• " + coOwner.toString().substring(0, 8) + "...")
+                                .withStyle(TextFormatting.WHITE),
+                        player.getUUID()
+                );
+            }
+        }
+
+        // Jugadores de confianza
+        if (!plot.getTrustedPlayers().isEmpty()) {
+            player.sendMessage(
+                    new StringTextComponent("Jugadores de confianza (" + plot.getTrustedPlayers().size() + "):")
+                            .withStyle(TextFormatting.YELLOW),
+                    player.getUUID()
+            );
+            for (UUID trusted : plot.getTrustedPlayers()) {
+                player.sendMessage(
+                        new StringTextComponent("• " + trusted.toString().substring(0, 8) + "...")
+                                .withStyle(TextFormatting.WHITE),
+                        player.getUUID()
+                );
+            }
+        }
+
+        if (plot.getCoOwners().isEmpty() && plot.getTrustedPlayers().isEmpty()) {
+            player.sendMessage(
+                    new StringTextComponent("No hay miembros adicionales en este lote.")
+                            .withStyle(TextFormatting.GRAY),
+                    player.getUUID()
+            );
+        }
     }
 }

@@ -14,6 +14,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import com.abfann.libunand.protection.PermissionManager;
 
 import java.util.Optional;
 
@@ -52,7 +53,7 @@ public class ProtectionEventHandler {
             }
 
             // Verificar permisos del jugador
-            if (!plot.hasPermission(player.getUUID())) {
+            if (!PermissionManager.canBuild(plot, player.getUUID())) {
                 event.setCanceled(true);
                 if (player instanceof ServerPlayerEntity) {
                     player.sendMessage(
@@ -104,7 +105,7 @@ public class ProtectionEventHandler {
             }
 
             // Verificar permisos del jugador
-            if (!plot.hasPermission(player.getUUID())) {
+            if (!PermissionManager.canBuild(plot, player.getUUID())) {
                 event.setCanceled(true);
                 if (player instanceof ServerPlayerEntity) {
                     player.sendMessage(
