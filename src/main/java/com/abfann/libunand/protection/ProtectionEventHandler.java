@@ -2,6 +2,8 @@ package com.abfann.libunand.protection;
 
 import com.abfann.libunand.LibunandMod;
 import com.abfann.libunand.items.SelectionTool;
+import net.minecraft.block.StandingSignBlock;
+import net.minecraft.block.WallSignBlock;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -89,7 +91,19 @@ public class ProtectionEventHandler {
         if (plotOpt.isPresent()) {
             Plot plot = plotOpt.get();
 
-            // Si el lote está en venta, nadie puede modificarlo
+            // NUEVA LÓGICA: Verificar si es OP colocando cartel en lote en venta
+            boolean isPlacingSign = event.getPlacedBlock().getBlock() instanceof StandingSignBlock ||
+                    event.getPlacedBlock().getBlock() instanceof WallSignBlock;
+            boolean isOP = player instanceof ServerPlayerEntity && ((ServerPlayerEntity) player).hasPermissions(2);
+
+            if (isPlacingSign && plot.isForSale() && isOP) {
+                // Permitir a OPs colocar carteles en lotes en venta
+                LibunandMod.LOGGER.debug("OP {} coloco cartel en lote en venta '{}'",
+                        player.getName().getString(), plot.getName());
+                return; // Permitir la colocación
+            }
+
+            // Si el lote está en venta, nadie más puede modificarlo
             if (plot.isForSale()) {
                 event.setCanceled(true);
                 if (player instanceof ServerPlayerEntity) {
@@ -104,7 +118,7 @@ public class ProtectionEventHandler {
                 return;
             }
 
-            // Verificar permisos del jugador
+            // Verificar permisos normales del jugador
             if (!PermissionManager.canBuild(plot, player.getUUID())) {
                 event.setCanceled(true);
                 if (player instanceof ServerPlayerEntity) {

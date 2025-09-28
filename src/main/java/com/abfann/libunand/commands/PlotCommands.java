@@ -11,11 +11,16 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.StandingSignBlock;
+import net.minecraft.block.WallSignBlock;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.tileentity.SignTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
@@ -23,6 +28,7 @@ import com.abfann.libunand.protection.PermissionManager;
 import com.abfann.libunand.protection.PlotRole;
 import com.abfann.libunand.protection.PlotPermission;
 import java.util.UUID;
+import com.abfann.libunand.protection.SignEventHandler;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +76,13 @@ public class PlotCommands {
                                 .executes(PlotCommands::showMembersHere)
                                 .then(Commands.argument("plotname", StringArgumentType.word())
                                         .executes(PlotCommands::showMembers)))
+                        .then(Commands.literal("updatesigns")
+                                .executes(PlotCommands::updateSigns))
+                        .then(Commands.literal("refreshsign")
+                                .executes(PlotCommands::refreshSignHere))
+                        .then(Commands.literal("debug")
+                                .requires(source -> source.hasPermission(2)) // Solo OPs
+                                .executes(PlotCommands::debugHere))
         );
     }
 
@@ -327,6 +340,13 @@ public class PlotCommands {
         player.sendMessage(new StringTextComponent("• /plot addowner <jugador> - Agregar co-propietario").withStyle(TextFormatting.YELLOW), player.getUUID());
         player.sendMessage(new StringTextComponent("• /plot removeowner <jugador> - Remover co-propietario").withStyle(TextFormatting.YELLOW), player.getUUID());
         player.sendMessage(new StringTextComponent("• /plot members [nombre] - Ver miembros del lote").withStyle(TextFormatting.YELLOW), player.getUUID());
+        // REEMPLAZA la sección de carteles por:
+        player.sendMessage(new StringTextComponent("--- Carteles de Venta ---").withStyle(TextFormatting.LIGHT_PURPLE), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Coloca un cartel en un lote en venta (OPs pueden hacerlo)").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Escribe [VENTA] en la primera linea").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• Click derecho en el cartel para comprar").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot refreshsign - Actualizar cartel cercano").withStyle(TextFormatting.YELLOW), player.getUUID());
+        player.sendMessage(new StringTextComponent("• /plot updatesigns - Actualizar todos los carteles").withStyle(TextFormatting.YELLOW), player.getUUID());
 
         // Comandos de administrador
         if (player.hasPermissions(2)) {
@@ -850,5 +870,145 @@ public class PlotCommands {
                     player.getUUID()
             );
         }
+    }
+
+    // /plot updatesigns - Actualizar carteles en lote actual
+    private static int updateSigns(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, player.blockPosition());
+        if (!plotOpt.isPresent()) {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        Plot plot = plotOpt.get();
+
+        // Verificar permisos
+        if (!PermissionManager.canAdministrate(plot, player.getUUID()) && !player.hasPermissions(2)) {
+            player.sendMessage(
+                    new StringTextComponent("No tienes permisos para actualizar carteles en este lote.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+
+        SignEventHandler.updateAllSaleSignsInPlot(plot, player.level);
+
+        player.sendMessage(
+                new StringTextComponent("Carteles actualizados en el lote '")
+                        .withStyle(TextFormatting.GREEN)
+                        .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                        .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                player.getUUID()
+        );
+
+        return 1;
+    }
+
+    // /plot refreshsign - Actualizar cartel donde estás parado
+    private static int refreshSignHere(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        BlockPos pos = player.blockPosition();
+
+        // Buscar cartel cerca del jugador
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -1; y <= 2; y++) {
+                for (int z = -2; z <= 2; z++) {
+                    BlockPos checkPos = pos.offset(x, y, z);
+                    BlockState state = player.level.getBlockState(checkPos);
+
+                    if (state.getBlock() instanceof StandingSignBlock || state.getBlock() instanceof WallSignBlock) {
+                        TileEntity tileEntity = player.level.getBlockEntity(checkPos);
+                        if (tileEntity instanceof SignTileEntity) {
+                            SignTileEntity signTile = (SignTileEntity) tileEntity;
+                            String firstLine = signTile.getMessage(0).getString().trim();
+
+                            if (firstLine.equalsIgnoreCase("[VENTA]")) {
+                                Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, checkPos);
+                                if (plotOpt.isPresent()) {
+                                    Plot plot = plotOpt.get();
+                                    if (plot.isForSale()) {
+                                        SignEventHandler.updateSaleSign(signTile, plot, false);
+
+                                        player.sendMessage(
+                                                new StringTextComponent("Cartel actualizado con informacion del lote '")
+                                                        .withStyle(TextFormatting.GREEN)
+                                                        .append(new StringTextComponent(plot.getName()).withStyle(TextFormatting.YELLOW))
+                                                        .append(new StringTextComponent("'.").withStyle(TextFormatting.GREEN)),
+                                                player.getUUID()
+                                        );
+                                        return 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        player.sendMessage(
+                new StringTextComponent("No se encontro ningun cartel de venta cerca.")
+                        .withStyle(TextFormatting.RED),
+                player.getUUID()
+        );
+        return 0;
+    }
+    // /plot debug - Información de debug sobre el lote actual
+    private static int debugHere(CommandContext<CommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource().getPlayerOrException();
+        BlockPos pos = player.blockPosition();
+
+        Optional<Plot> plotOpt = PlotManager.getInstance().getPlotAt(player.level, pos);
+
+        player.sendMessage(
+                new StringTextComponent("=== Debug Info ===").withStyle(TextFormatting.GOLD),
+                player.getUUID()
+        );
+
+        player.sendMessage(
+                new StringTextComponent("Posicion: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
+                        .withStyle(TextFormatting.WHITE),
+                player.getUUID()
+        );
+
+        player.sendMessage(
+                new StringTextComponent("Es OP: " + player.hasPermissions(2))
+                        .withStyle(TextFormatting.WHITE),
+                player.getUUID()
+        );
+
+        if (plotOpt.isPresent()) {
+            Plot plot = plotOpt.get();
+            player.sendMessage(
+                    new StringTextComponent("En lote: " + plot.getName())
+                            .withStyle(TextFormatting.GREEN),
+                    player.getUUID()
+            );
+            player.sendMessage(
+                    new StringTextComponent("En venta: " + plot.isForSale())
+                            .withStyle(TextFormatting.WHITE),
+                    player.getUUID()
+            );
+            player.sendMessage(
+                    new StringTextComponent("Puede construir: " + PermissionManager.canBuild(plot, player.getUUID()))
+                            .withStyle(TextFormatting.WHITE),
+                    player.getUUID()
+            );
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("No estas en ningun lote")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+        }
+
+        return 1;
     }
 }
