@@ -1,5 +1,7 @@
 package com.abfann.libunand;
 
+import com.abfann.libunand.building.StructureCatalog;
+import com.abfann.libunand.commands.ConstructCommands;
 import com.abfann.libunand.commands.EconomyCommands;
 import com.abfann.libunand.commands.PlotCommands;
 import com.abfann.libunand.config.ConfigManager;
@@ -60,12 +62,16 @@ public class LibunandMod {
     public void onServerStarted(FMLServerStartedEvent event) {
         PlotManager.getInstance().initialize(event.getServer());
         LOGGER.info("PlotManager inicializado con el servidor!");
+
+        StructureCatalog.getInstance().initialize(event.getServer());
+        LOGGER.info("StructureCatalog inicializado con el servidor!");
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         EconomyCommands.register(event.getDispatcher());
         PlotCommands.register(event.getDispatcher());
+        ConstructCommands.register(event.getDispatcher());
         LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
 }

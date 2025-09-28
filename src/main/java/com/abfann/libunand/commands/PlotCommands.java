@@ -320,7 +320,7 @@ public class PlotCommands {
     }
 
     // /plot help
-    // BUSCA el método showHelp y REEMPLÁZALO completamente por esto:
+    // BUSCA el método showHelp y REEMPLAZALO completamente por esto:
     private static int showHelp(CommandContext<CommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrException();
 
@@ -366,7 +366,6 @@ public class PlotCommands {
     /**
      * Muestra información detallada de un lote
      */
-    // BUSCA el método showPlotInfo y REEMPLÁZALO completamente por esto:
     private static void showPlotInfo(ServerPlayerEntity player, Plot plot) {
         player.sendMessage(
                 new StringTextComponent("=== Informacion del Lote ===")
