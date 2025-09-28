@@ -4,8 +4,8 @@ import com.abfann.libunand.LibunandMod;
 import com.abfann.libunand.data.IPlayerEconomy;
 import com.abfann.libunand.data.PlayerDataHandler;
 import com.abfann.libunand.items.SelectionTool;
-import com.abfann.libunand.protection.Plot;
-import com.abfann.libunand.protection.PlotManager;
+import com.abfann.libunand.protection.*;
+import com.abfann.libunand.protection.PlotBorderManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -24,11 +24,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
-import com.abfann.libunand.protection.PermissionManager;
-import com.abfann.libunand.protection.PlotRole;
-import com.abfann.libunand.protection.PlotPermission;
+
 import java.util.UUID;
-import com.abfann.libunand.protection.SignEventHandler;
 
 import java.util.List;
 import java.util.Optional;
@@ -297,6 +294,33 @@ public class PlotCommands {
         LibunandMod.LOGGER.info("Jugador {} compro el lote '{}' por {} JoJoCoins",
                 player.getName().getString(), plot.getName(), plot.getPrice());
 
+// Procesar fusión automática
+        // Crear bordes visuales para el lote comprado
+        PlotBorderManager.createPlotBorders(plot, player.level);
+
+// Procesar fusión automática
+        boolean wasMerged = PlotMerger.processAutoMerge(plot, player.getUUID(), player.level);
+
+        if (wasMerged) {
+            player.sendMessage(
+                    new StringTextComponent("Tu lote se fusiono automaticamente con lotes cercanos!")
+                            .withStyle(TextFormatting.LIGHT_PURPLE),
+                    player.getUUID()
+            );
+
+            // Actualizar bordes tras fusión
+            PlotBorderManager.updateBordersAfterMerge(plot, player.level);
+
+            // Actualizar carteles tras fusión
+            SignEventHandler.updateAllSaleSignsInPlot(plot, player.level);
+        } else {
+            player.sendMessage(
+                    new StringTextComponent("Bordes visuales del lote creados con ladrillos de piedra!")
+                            .withStyle(TextFormatting.AQUA),
+                    player.getUUID()
+            );
+        }
+
         return 1;
     }
 
@@ -320,7 +344,6 @@ public class PlotCommands {
     }
 
     // /plot help
-    // BUSCA el método showHelp y REEMPLÁZALO completamente por esto:
     private static int showHelp(CommandContext<CommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayerOrException();
 
@@ -366,7 +389,6 @@ public class PlotCommands {
     /**
      * Muestra información detallada de un lote
      */
-    // BUSCA el método showPlotInfo y REEMPLÁZALO completamente por esto:
     private static void showPlotInfo(ServerPlayerEntity player, Plot plot) {
         player.sendMessage(
                 new StringTextComponent("=== Informacion del Lote ===")
