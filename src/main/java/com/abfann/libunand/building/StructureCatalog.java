@@ -183,4 +183,8 @@ public class StructureCatalog {
     public int getStructureCount() {
         return structures.size();
     }
+
+    public File getStructuresDirectory() {
+        return structuresDir;
+    }
 }

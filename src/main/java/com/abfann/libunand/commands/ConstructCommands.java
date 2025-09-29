@@ -2,6 +2,7 @@ package com.abfann.libunand.commands;
 
 import com.abfann.libunand.LibunandMod;
 import com.abfann.libunand.building.BlockPriceCalculator;
+import com.abfann.libunand.building.StructureBuilder;
 import com.abfann.libunand.building.StructureCatalog;
 import com.abfann.libunand.building.StructureInfo;
 import com.abfann.libunand.data.IPlayerEconomy;
@@ -326,11 +327,11 @@ public class ConstructCommands {
         // TODO: Verificar que hay espacio suficiente en el lote
         // TODO: Implementar construcción real
 
-        // Por ahora, solo simulamos la compra
+        // Realizar la compra
         economy.removeBalance(structure.getPrice());
 
         player.sendMessage(
-                new StringTextComponent("Construccion iniciada! Compraste '")
+                new StringTextComponent("Compra exitosa! Iniciando construccion de '")
                         .withStyle(TextFormatting.GREEN)
                         .append(new StringTextComponent(structure.getName()).withStyle(TextFormatting.YELLOW))
                         .append(new StringTextComponent("' por ").withStyle(TextFormatting.GREEN))
@@ -338,16 +339,25 @@ public class ConstructCommands {
                 player.getUUID()
         );
 
-        player.sendMessage(
-                new StringTextComponent("NOTA: La construccion automatica sera implementada pronto. Por ahora solo se dedujo el costo.")
-                        .withStyle(TextFormatting.YELLOW),
-                player.getUUID()
+// Construir la estructura (modo instantáneo por defecto)
+        boolean success = StructureBuilder.buildStructureInstant(
+                player.level,
+                player.blockPosition().above(),
+                structure.getFileName(), // Usar fileName en lugar de name
+                player
         );
 
-        LibunandMod.LOGGER.info("Jugador {} 'compro' estructura '{}' por {} JoJoCoins",
-                player.getName().getString(), structure.getName(), structure.getPrice());
-
-        return 1;
+        if (!success) {
+            // Reembolsar si falla la construcción
+            economy.addBalance(structure.getPrice());
+            player.sendMessage(
+                    new StringTextComponent("Error en la construccion. JoJoCoins reembolsados.")
+                            .withStyle(TextFormatting.RED),
+                    player.getUUID()
+            );
+            return 0;
+        }
+        return  1;
     }
 
     // /construct reload

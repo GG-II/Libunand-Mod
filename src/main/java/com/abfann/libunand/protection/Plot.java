@@ -1,5 +1,6 @@
 package com.abfann.libunand.protection;
 
+import com.abfann.libunand.LibunandMod;
 import com.google.gson.annotations.Expose;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -53,9 +54,7 @@ public class Plot {
     // Constructor para nuevos lotes
     public Plot(String name, World world, BlockPos corner1, BlockPos corner2, int price) {
         this.name = name;
-        this.worldUUID = world.dimension().location().getPath().hashCode() != 0 ?
-                UUID.nameUUIDFromBytes(world.dimension().location().toString().getBytes()) :
-                UUID.randomUUID();
+        this.worldUUID = UUID.nameUUIDFromBytes(("libunand_" + world.dimension().location().toString()).getBytes());
         this.worldName = world.dimension().location().toString();
         this.corner1 = corner1;
         this.corner2 = corner2;
@@ -83,8 +82,16 @@ public class Plot {
         int minZ = Math.min(corner1.getZ(), corner2.getZ());
         int maxZ = Math.max(corner1.getZ(), corner2.getZ());
 
-        return pos.getX() >= minX && pos.getX() <= maxX &&
+        boolean inBounds = pos.getX() >= minX && pos.getX() <= maxX &&
                 pos.getZ() >= minZ && pos.getZ() <= maxZ;
+
+        // Debug
+        if (inBounds) {
+            LibunandMod.LOGGER.debug("Posición {} está dentro del lote (X: {}-{}, Z: {}-{})",
+                    pos, minX, maxX, minZ, maxZ);
+        }
+
+        return inBounds;
     }
 
     /**

@@ -81,6 +81,10 @@ public class PlotManager {
         } catch (IOException e) {
             LibunandMod.LOGGER.error("Error cargando plots.json: {}", e.getMessage());
         }
+
+        for (Plot plot : plots) {
+            LibunandMod.LOGGER.info("Lote cargado: '{}' con UUID {}", plot.getName(), plot.getWorldUUID());
+        }
     }
 
     /**
@@ -121,7 +125,7 @@ public class PlotManager {
      * Verifica si hay solapamiento con otros lotes
      */
     private boolean hasOverlap(World world, BlockPos corner1, BlockPos corner2) {
-        UUID worldUUID = UUID.nameUUIDFromBytes(world.dimension().location().toString().getBytes());
+        UUID worldUUID = UUID.nameUUIDFromBytes(("libunand_" + world.dimension().location().toString()).getBytes());
 
         for (Plot plot : plots) {
             if (!plot.getWorldUUID().equals(worldUUID)) continue;
@@ -158,12 +162,26 @@ public class PlotManager {
      * Busca el lote que contiene una posición específica
      */
     public Optional<Plot> getPlotAt(World world, BlockPos pos) {
-        UUID worldUUID = UUID.nameUUIDFromBytes(world.dimension().location().toString().getBytes());
+        UUID worldUUID = UUID.nameUUIDFromBytes(("libunand_" + world.dimension().location().toString()).getBytes());
 
-        return plots.stream()
-                .filter(plot -> plot.getWorldUUID().equals(worldUUID))
-                .filter(plot -> plot.contains(pos))
-                .findFirst();
+        LibunandMod.LOGGER.debug("Buscando lote en pos {} con worldUUID {}", pos, worldUUID);
+        LibunandMod.LOGGER.debug("Total de lotes cargados: {}", plots.size());
+
+        for (Plot plot : plots) {
+            LibunandMod.LOGGER.debug("Revisando lote '{}' con worldUUID {}", plot.getName(), plot.getWorldUUID());
+
+            if (plot.getWorldUUID().equals(worldUUID)) {
+                LibunandMod.LOGGER.debug("UUID coincide, verificando contención en lote '{}'", plot.getName());
+
+                if (plot.contains(pos)) {
+                    LibunandMod.LOGGER.debug("Posición está dentro del lote '{}'", plot.getName());
+                    return Optional.of(plot);
+                }
+            }
+        }
+
+        LibunandMod.LOGGER.debug("No se encontró lote en posición {}", pos);
+        return Optional.empty();
     }
 
     /**
