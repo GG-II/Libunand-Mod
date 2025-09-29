@@ -14,7 +14,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = LibunandMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)  // <- CAMBIAR ESTA LÍNEA
+@Mod.EventBusSubscriber(modid = LibunandMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class VillagerTradeHandler {
 
     @SubscribeEvent

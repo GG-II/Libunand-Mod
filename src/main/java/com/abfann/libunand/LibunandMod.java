@@ -33,7 +33,7 @@ public class LibunandMod {
 
         // Registrar el mod para eventos del servidor
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(VillagerTradeHandler.class); // <- AGREGAR ESTA LÍNEA
+        MinecraftForge.EVENT_BUS.register(VillagerTradeHandler.class);
     }
 
     private void setup(final FMLCommonSetupEvent event) {
@@ -56,6 +56,9 @@ public class LibunandMod {
     @SubscribeEvent
     public void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
         EconomyCommands.register(event.getDispatcher());
+        com.abfann.libunand.shops.ShopCommands.register(event.getDispatcher());
         LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
+
+
 }
