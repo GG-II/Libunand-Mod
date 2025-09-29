@@ -3,9 +3,9 @@ package com.abfann.libunand;
 import com.abfann.libunand.commands.EconomyCommands;
 import com.abfann.libunand.config.ConfigManager;
 import com.abfann.libunand.data.PlayerDataHandler;
+import com.abfann.libunand.data.VillagerTradeHandler;  // <- AGREGAR ESTE IMPORT
 import com.abfann.libunand.items.ModItems;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -33,6 +33,7 @@ public class LibunandMod {
 
         // Registrar el mod para eventos del servidor
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(VillagerTradeHandler.class); // <- AGREGAR ESTA LÍNEA
     }
 
     private void setup(final FMLCommonSetupEvent event) {
@@ -53,7 +54,7 @@ public class LibunandMod {
     }
 
     @SubscribeEvent
-    public void onRegisterCommands(RegisterCommandsEvent event) {
+    public void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
         EconomyCommands.register(event.getDispatcher());
         LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
