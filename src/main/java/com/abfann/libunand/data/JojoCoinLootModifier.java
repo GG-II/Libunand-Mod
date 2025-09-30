@@ -10,6 +10,7 @@ import net.minecraft.loot.conditions.ILootCondition;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.loot.GlobalLootModifierSerializer;
 import net.minecraftforge.common.loot.LootModifier;
+import net.minecraft.loot.LootParameters;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -59,7 +60,21 @@ public class JojoCoinLootModifier extends LootModifier {
         }
 
         // Obtener la tabla de loot para determinar estructura
-        ResourceLocation lootTable = context.getQueriedLootTableId();
+        ResourceLocation lootTable = null;
+        try {
+            // Intentar obtener el loot table de forma segura
+            if (context.hasParam(net.minecraft.loot.LootParameters.THIS_ENTITY)) {
+                return; // No agregar medallones a drops de entidades
+            }
+
+            // Solo procesar cofres de estructuras
+            lootTable = context.getQueriedLootTableId();
+
+        } catch (Exception e) {
+            // Si falla, simplemente retornar sin agregar medallones
+            return;
+        }
+
         if (lootTable == null) return;
 
         String path = lootTable.getPath();
@@ -67,37 +82,26 @@ public class JojoCoinLootModifier extends LootModifier {
 
         // Determinar medallon segun estructura
         if (path.contains("stronghold")) {
-            // Fortalezas: Guerrero
             medallion = new ItemStack(ModItems.MEDALLION_GUERRERO.get());
         } else if (path.contains("woodland_mansion")) {
-            // Mansiones: Berserker
             medallion = new ItemStack(ModItems.MEDALLION_BERSERKER.get());
-        } else if (path.contains("simple_dungeon")) {
-            // Templos selva: Cazador
+        } else if (path.contains("jungle")) {
             medallion = new ItemStack(ModItems.MEDALLION_CAZADOR.get());
-        } else if (path.contains("end_city")) {
-            // End City: Corredor
+        } else if (path.contains("bastion")) {
             medallion = new ItemStack(ModItems.MEDALLION_CORREDOR.get());
         } else if (path.contains("desert_pyramid")) {
-            // Templo desierto: Sombras
             medallion = new ItemStack(ModItems.MEDALLION_SOMBRAS.get());
         } else if (path.contains("bastion")) {
-            // Bastion: Titan
             medallion = new ItemStack(ModItems.MEDALLION_TITAN.get());
-        } else if (path.contains("woodland_mansion")) {
-            // Mazmorras: Vampirico
+        } else if (path.contains("simple_dungeon")) {
             medallion = new ItemStack(ModItems.MEDALLION_VAMPIRICO.get());
         } else if (path.contains("nether_bridge")) {
-            // Fortaleza Nether: Igneo
             medallion = new ItemStack(ModItems.MEDALLION_IGNEO.get());
         } else if (path.contains("abandoned_mineshaft")) {
-            // Minas: Ingeniero
             medallion = new ItemStack(ModItems.MEDALLION_INGENIERO.get());
         } else if (path.contains("underwater_ruin")) {
-            // Ruinas oceanicas: Caparazon
             medallion = new ItemStack(ModItems.MEDALLION_CAPARAZON.get());
         } else if (path.contains("shipwreck")) {
-            // Naufragios: Triton
             medallion = new ItemStack(ModItems.MEDALLION_TRITON.get());
         }
 

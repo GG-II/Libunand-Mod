@@ -68,16 +68,18 @@ public class ShopTransaction {
         buyerEconomy.removeBalance(shop.getPrice());
 
         // Dar dinero al vendedor (offline-safe)
-        ServerPlayerEntity seller = world.getServer().getPlayerList().getPlayer(shop.getOwnerUUID());
-        if (seller != null) {
-            IPlayerEconomy sellerEconomy = PlayerDataHandler.getPlayerEconomy(seller);
-            sellerEconomy.addBalance(shop.getPrice());
-            seller.sendMessage(
-                    new StringTextComponent("Has vendido " + shop.getQuantity() + "x " + shop.getItemId() +
-                            " por " + shop.getPrice() + " JoJoCoins!")
-                            .withStyle(TextFormatting.GREEN),
-                    seller.getUUID()
-            );
+        if (!player.level.isClientSide) {
+            ServerPlayerEntity seller = buyer.getServer().getPlayerList().getPlayer(shop.getOwnerUUID());
+            if (seller != null) {
+                IPlayerEconomy sellerEconomy = PlayerDataHandler.getPlayerEconomy(seller);
+                sellerEconomy.addBalance(shop.getPrice());
+                seller.sendMessage(
+                        new StringTextComponent("Has vendido " + shop.getQuantity() + "x " + shop.getItemId() +
+                                " por " + shop.getPrice() + " JoJoCoins!")
+                                .withStyle(TextFormatting.GREEN),
+                        seller.getUUID()
+                );
+            }
         }
 
         // Dar items al comprador
@@ -162,16 +164,18 @@ public class ShopTransaction {
         }
 
         // Quitar dinero al comprador (offline-safe)
-        ServerPlayerEntity buyer = world.getServer().getPlayerList().getPlayer(shop.getOwnerUUID());
-        if (buyer != null) {
-            IPlayerEconomy buyerEconomy = PlayerDataHandler.getPlayerEconomy(buyer);
-            buyerEconomy.removeBalance(shop.getPrice());
-            buyer.sendMessage(
-                    new StringTextComponent("Has comprado " + shop.getQuantity() + "x " + shop.getItemId() +
-                            " por " + shop.getPrice() + " JoJoCoins!")
-                            .withStyle(TextFormatting.GREEN),
-                    buyer.getUUID()
-            );
+        if (!player.level.isClientSide) {
+            ServerPlayerEntity buyerPlayer = seller.getServer().getPlayerList().getPlayer(shop.getOwnerUUID());
+            if (buyerPlayer != null) {
+                IPlayerEconomy buyerEconomy = PlayerDataHandler.getPlayerEconomy(buyerPlayer);
+                buyerEconomy.removeBalance(shop.getPrice());
+                buyerPlayer.sendMessage(
+                        new StringTextComponent("Has comprado " + shop.getQuantity() + "x " + shop.getItemId() +
+                                " por " + shop.getPrice() + " JoJoCoins!")
+                                .withStyle(TextFormatting.GREEN),
+                        buyerPlayer.getUUID()
+                );
+            }
         }
 
         seller.sendMessage(

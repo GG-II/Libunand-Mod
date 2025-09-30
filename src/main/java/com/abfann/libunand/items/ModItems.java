@@ -1,6 +1,7 @@
 package com.abfann.libunand.items;
 
 import com.abfann.libunand.LibunandMod;
+import com.abfann.libunand.plots.PlotSelectionTool;
 import net.minecraft.item.Item;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
@@ -54,4 +55,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> MEDALLION_TRITON =
             ITEMS.register("medallion_triton", () -> new MedallionItem("Medallon del Triton", 150, MedallionItem.MedallionEffect.TRITON));
+
+    public static final RegistryObject<Item> PLOT_SELECTOR =
+            ITEMS.register("plot_selector", PlotSelectionTool::new);
 }
