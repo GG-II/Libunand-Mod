@@ -57,8 +57,8 @@ public class LibunandMod {
     public void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
         EconomyCommands.register(event.getDispatcher());
         com.abfann.libunand.shops.ShopCommands.register(event.getDispatcher());
+        com.abfann.libunand.commands.UtilityCommands.register(event.getDispatcher()); // <- AGREGAR ESTA LÍNEA
         LOGGER.info("Comandos de JoJoCoins registrados exitosamente!");
     }
-
 
 }
